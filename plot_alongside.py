@@ -90,6 +90,7 @@ class Draw:
 		plt.savefig("{}/{}_{}".format(output_dir, filename[:-4], distribution))
 		if show:
 			plt.show()
+		plt.clf()
 
 		if distribution == "pl":
 			with open("{}/out_data_pl.txt".format(output_dir), "a") as f:
