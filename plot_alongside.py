@@ -10,16 +10,23 @@ import sys
 class QDPlot:
 	# TODO add verbose
 	# TODO add argparse
+	# TODO save figures
+	# TODO save parameters in a file
+	# TODO calculate parameters averages and store them in data
 
 	def __init__(self, input_data):
 		# TODO add try
 		self.input_data = read_csv(input_data, header=None, sep="\t")
+		self.filename = input_data.split("/")[-1]
 		self.experimental = None
+		self.events = None
 
 	# a must be 0 for ON and 1 for OFF
 	# TODO change 0 and 1 for more legible text
-	def collect(self, a):
-		data = [x * 1000 for x in self.input_data[a]]
+	def collect(self, events):
+		self.events = events.lower() if not str(events).isdigit() else "on" if events == 0 else "off"
+		i = 0 if events in ("on", "ON", "On", 0) else 1 if events in ("off", "Off", "OFF", 1) else print("Dupa")
+		data = [x * 1000 for x in self.input_data[i]]
 		# create object with data
 		experimental = powerlaw.Fit(data, xmin=min(data))
 		# TODO add color
@@ -28,6 +35,7 @@ class QDPlot:
 
 	# double underscore means class private
 	def __plot(self):
+		# TODO implement created functions which plot independently
 		fig = plt.figure(figsize=(15, 5))
 		self.ax1 = fig.add_subplot(131)
 		self.ax2 = fig.add_subplot(132)
@@ -42,22 +50,29 @@ class QDPlot:
 		ls = "--"
 
 		def pl():
-			self.experimental.power_law.plot_pdf(ax=self.ax1, label="pl", ls=ls)
+			a = self.experimental.power_law.alpha
+			self.experimental.power_law.plot_pdf(ax=self.ax1, label="pl\na={0:.4G}".format(a), ls=ls)
 			self.experimental.power_law.plot_cdf(ax=self.ax2, label="pl", ls=ls)
 			self.experimental.power_law.plot_ccdf(ax=self.ax3, label="pl", ls=ls)
 
 		def tpl():
-			self.experimental.truncated_power_law.plot_pdf(ax=self.ax1, label="tpl", ls=ls)
+			a = self.experimental.truncated_power_law.alpha
+			l = self.experimental.truncated_power_law.Lambda
+			self.experimental.truncated_power_law.plot_pdf(ax=self.ax1,
+			    label="tpl\na={0:.4G}\nL={1:.4G}".format(a, l),
+			    ls=ls)
 			self.experimental.truncated_power_law.plot_cdf(ax=self.ax2, label="tpl", ls=ls)
 			self.experimental.truncated_power_law.plot_ccdf(ax=self.ax3, label="tpl", ls=ls)
 
 		if distribution == "none":
+			distribution = None
 			pass
 		elif distribution == "pl":
 			pl()
 		elif distribution == "tpl":
 			tpl()
 		elif distribution == "all":
+			distribution = "pl + tpl"
 			pl()
 			tpl()
 		else:
@@ -82,7 +97,9 @@ class QDPlot:
 			title_flag += 1
 
 		# TODO ask if show?
+		plt.suptitle("name: {}, events: {}, fit: {}".format(self.filename, self.events, distribution))
 		plt.tight_layout()
+		plt.subplots_adjust(top=.85)
 		plt.show()
 
 
@@ -94,7 +111,7 @@ for i in range(2):
 	for t in ["pl", "tpl"]:
 		f.fit("all")
 # f.collect(0)
-# f.fit("none")
+# f.fit("all")
 
 #
 # class Draw:
