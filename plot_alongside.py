@@ -25,7 +25,6 @@ class QDPlot:
 		self.ax3 = None
 
 	# a must be 0 for ON and 1 for OFF
-	# TODO change 0 and 1 for more legible text
 	def collect(self, events):
 		self.events = events.lower() if not str(events).isdigit() else "on" if events == 0 else "off"
 		i = 0 if events in ("on", "ON", "On", 0) else 1 if events in ("off", "Off", "OFF", 1) else print("Dupa")
@@ -37,7 +36,6 @@ class QDPlot:
 		return experimental
 
 	# double underscore means class private
-
 	# functions to plot
 	def __pdf(self):
 		points = self.experimental.pdf()
@@ -48,21 +46,35 @@ class QDPlot:
 		y = [each if each != 0 else None for each in y]
 		return x, y
 
+	def __cdf(self):
+		points = self.experimental.ccdf()
+		x = [x for x in points[0]]
+		y = [1 - y for y in points[1]]
+		return x, y
+
+	def __ccdf(self):
+		points = self.experimental.ccdf()
+		x = [x for x in points[0]]
+		y = [y for y in points[1]]
+		return x, y
+
 	def plot(self):
 		# TODO implement created functions which plot independently
-		x, y = self.__pdf()
 		fig = plt.figure(figsize=(15, 5))
 		# plot pdf
 		self.ax1 = fig.add_subplot(131)
+		x, y = self.__pdf()
 		self.ax1.plot(x, y, "b.-", label="pdf")
 		# plot cdf
 		# TODO plot cdf manually
 		self.ax2 = fig.add_subplot(132)
-		self.experimental.plot_cdf(ax=self.ax2, label="cdf")
+		x, y = self.__cdf()
+		self.ax2.plot(x, y, "b.-", label="cdf")
 		# plot ccdf
 		# TODO plot ccdf manually
 		self.ax3 = fig.add_subplot(133)
-		self.experimental.plot_ccdf(ax=self.ax3, label="ccdf")
+		x, y = self.__ccdf()
+		self.ax3.plot(x, y, "b.-", label="ccdf")
 
 	# TODO maybe rename fit_all and then add different functions for pdf, cdf and ccdf?
 	def fit(self, distribution):
@@ -128,12 +140,12 @@ class QDPlot:
 file = "./on_off_times/1.txt"
 
 f = QDPlot(file)
-for i in range(2):
-	f.collect(i)
-	for t in ["pl", "tpl"]:
-		f.fit("all")
-# f.collect(0)
-# f.fit("all")
+# for i in range(2):
+# 	f.collect(i)
+# 	for t in ["pl", "tpl"]:
+# 		f.fit("all")
+f.collect("ON")
+f.fit("all")
 
 #
 # class Draw:
