@@ -20,6 +20,9 @@ class QDPlot:
 		self.filename = input_data.split("/")[-1]
 		self.experimental = None
 		self.events = None
+		self.ax1 = None
+		self.ax2 = None
+		self.ax3 = None
 
 	# a must be 0 for ON and 1 for OFF
 	# TODO change 0 and 1 for more legible text
@@ -34,35 +37,54 @@ class QDPlot:
 		return experimental
 
 	# double underscore means class private
-	def __plot(self):
+
+	# functions to plot
+	def __pdf(self):
+		points = self.experimental.pdf()
+		x = list(points[0])
+		bin_centers = [(x[n] + x[n + 1]) / 2 for n in range(len(x) - 1)]
+		x = bin_centers
+		y = list(points[1])
+		y = [each if each != 0 else None for each in y]
+		return x, y
+
+	def plot(self):
 		# TODO implement created functions which plot independently
+		x, y = self.__pdf()
 		fig = plt.figure(figsize=(15, 5))
+		# plot pdf
 		self.ax1 = fig.add_subplot(131)
+		self.ax1.plot(x, y, "b.-", label="pdf")
+		# plot cdf
+		# TODO plot cdf manually
 		self.ax2 = fig.add_subplot(132)
-		self.ax3 = fig.add_subplot(133)
-		self.experimental.plot_pdf(ax=self.ax1, label="pdf")
 		self.experimental.plot_cdf(ax=self.ax2, label="cdf")
+		# plot ccdf
+		# TODO plot ccdf manually
+		self.ax3 = fig.add_subplot(133)
 		self.experimental.plot_ccdf(ax=self.ax3, label="ccdf")
 
 	# TODO maybe rename fit_all and then add different functions for pdf, cdf and ccdf?
 	def fit(self, distribution):
-		self.__plot()
+		self.plot()
 		ls = "--"
 
 		def pl():
+			color = "green"
 			a = self.experimental.power_law.alpha
-			self.experimental.power_law.plot_pdf(ax=self.ax1, label="pl\na={0:.4G}".format(a), ls=ls)
-			self.experimental.power_law.plot_cdf(ax=self.ax2, label="pl", ls=ls)
-			self.experimental.power_law.plot_ccdf(ax=self.ax3, label="pl", ls=ls)
+			self.experimental.power_law.plot_pdf(ax=self.ax1, label="pl\na={0:.4G}".format(a), ls=ls, color=color)
+			self.experimental.power_law.plot_cdf(ax=self.ax2, label="pl", ls=ls, color=color)
+			self.experimental.power_law.plot_ccdf(ax=self.ax3, label="pl", ls=ls, color=color)
 
 		def tpl():
+			color = "red"
 			a = self.experimental.truncated_power_law.alpha
 			l = self.experimental.truncated_power_law.Lambda
 			self.experimental.truncated_power_law.plot_pdf(ax=self.ax1,
 			    label="tpl\na={0:.4G}\nL={1:.4G}".format(a, l),
-			    ls=ls)
-			self.experimental.truncated_power_law.plot_cdf(ax=self.ax2, label="tpl", ls=ls)
-			self.experimental.truncated_power_law.plot_ccdf(ax=self.ax3, label="tpl", ls=ls)
+			    ls=ls, color=color)
+			self.experimental.truncated_power_law.plot_cdf(ax=self.ax2, label="tpl", ls=ls, color=color)
+			self.experimental.truncated_power_law.plot_ccdf(ax=self.ax3, label="tpl", ls=ls, color=color)
 
 		if distribution == "none":
 			distribution = None
