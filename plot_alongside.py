@@ -18,6 +18,6 @@ for each in os.listdir("./on_off_times"):
 		print("plotting data: {}".format(file_dir))
 		f = qdpy.QDPlot(file_dir)
 		f.collect("on")
-		a = f.fit("pl")
-		print(a)
+		f.fit("all")
+f.calculate_data()
 print("Done.")

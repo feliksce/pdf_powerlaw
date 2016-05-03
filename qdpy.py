@@ -2,7 +2,7 @@
 import powerlaw
 from matplotlib import pyplot as plt
 from pandas import read_csv
-from numpy import mean, std
+from numpy import mean, std, median
 import math
 import sys
 import os
@@ -26,6 +26,7 @@ class QDPlot:
 		self.ax2 = None
 		self.ax3 = None
 		self.distribution = None
+		self.data_output = None
 
 	# a must be 0 for ON and 1 for OFF
 	def collect(self, events):
@@ -86,20 +87,32 @@ class QDPlot:
 
 		def pl():
 			color = "green"
-			a = self.experimental.power_law.alpha
+			a = pl_a()
 			self.experimental.power_law.plot_pdf(ax=self.ax1, label="pl\na={0:.4G}".format(a), ls=ls, color=color)
 			self.experimental.power_law.plot_cdf(ax=self.ax2, label="pl", ls=ls, color=color)
 			self.experimental.power_law.plot_ccdf(ax=self.ax3, label="pl", ls=ls, color=color)
 
+		def pl_a():
+			a = self.experimental.power_law.alpha
+			return a
+
 		def tpl():
 			color = "red"
-			a = self.experimental.truncated_power_law.alpha
-			l = self.experimental.truncated_power_law.Lambda
+			a = tpl_a()
+			l = tpl_l()
 			self.experimental.truncated_power_law.plot_pdf(ax=self.ax1,
 			    label="tpl\na={0:.4G}\nL={1:.4G}".format(a, l),
 			    ls=ls, color=color)
 			self.experimental.truncated_power_law.plot_cdf(ax=self.ax2, label="tpl", ls=ls, color=color)
 			self.experimental.truncated_power_law.plot_ccdf(ax=self.ax3, label="tpl", ls=ls, color=color)
+
+		def tpl_a():
+			a = self.experimental.truncated_power_law.alpha
+			return a
+
+		def tpl_l():
+			l = self.experimental.truncated_power_law.Lambda
+			return l
 
 		# TODO add __save_data to each group
 		if distribution == "none":
@@ -107,12 +120,22 @@ class QDPlot:
 			pass
 		elif distribution == "pl":
 			pl()
+			a = pl_a()
+			self.__save_data(self.filename, self.distribution, a)
 		elif distribution == "tpl":
 			tpl()
+			a = tpl_a()
+			l = tpl_l()
+			self.__save_data(self.filename, self.distribution, a, l)
 		elif distribution == "all":
 			distribution = "pl + tpl"
 			pl()
+			a = pl_a()
+			self.__save_data(self.filename, "pl", a)
 			tpl()
+			a = tpl_a()
+			l = tpl_l()
+			self.__save_data(self.filename, "tpl", a, l)
 		else:
 			print("No distribution chosen. [pl/tpl/all/none]", file=sys.stderr)
 			exit()
@@ -157,20 +180,43 @@ class QDPlot:
 		save_dir = "{}/data_out".format(self.directory)
 		output = "{}_data.txt".format(distribution.lower())
 		full_path = "{}/{}".format(save_dir, output)
+		self.data_output = save_dir
 		if not os.path.exists(save_dir):
 			os.mkdir(save_dir)
-		plt.savefig(full_path)
-		with open(full_path, "a") as f:
-			# check header
-			if not f.readline() == "name\talpha\n" or f.readline() == "name\talpha\tlambda\n":
-				if l:
-					f.write("name\talpha\tlambda\n")
-				else:
-					f.write("name\talpha\n")
 
-			# write actual data
+		with open(full_path, "a+") as f:
 			if l:
 				f.write("{}\t{}\t{}\n".format(filename, a, l))
 			else:
 				f.write("{}\t{}\n".format(filename, a))
 		f.close()
+
+	def calculate_data(self):
+		pl_file = "{}/pl_data.txt".format(self.data_output)
+		tpl_file = "{}/tpl_data.txt".format(self.data_output)
+		if os.path.exists(pl_file):
+			column = read_csv(pl_file, header=None, sep="\t")
+			print("pl")
+			print("mean\t{}\nstdev\t{}\nmedian\t{}\n".format(
+				mean(column[1]), std(column[1]), median(column[1])
+			))
+			with open(pl_file, "a") as f:
+				f.write("mean\t{}\nstdev\t{}\nmedian\t{}\n".format(
+					mean(column[1]), std(column[1]), median(column[1])
+				))
+			f.close()
+		if os.path.exists(tpl_file):
+			column = read_csv(tpl_file, header=None, sep="\t")
+			print("tpl")
+			print("mean\t{}\t{}\nstdev\t{}\t{}\nmedian\t{}\t{}\n".format(
+				mean(column[1]), mean(column[2]),
+				std(column[1]), std(column[2]),
+				median(column[1]), median(column[2]),
+			))
+			with open(tpl_file, "a") as f:
+				f.write("mean\t{}\t{}\nstdev\t{}\t{}\nmedian\t{}\t{}\n".format(
+					mean(column[1]), mean(column[2]),
+					std(column[1]), std(column[2]),
+					median(column[1]), median(column[2]),
+				))
+			f.close()
