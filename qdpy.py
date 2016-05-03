@@ -220,3 +220,17 @@ class QDPlot:
 					median(column[1]), median(column[2]),
 				))
 			f.close()
+
+
+def main(*args):
+	for each in args:
+		if each.endswith(".txt"):
+			file_dir = each
+			print("plotting data: {}".format(file_dir))
+			f = QDPlot(file_dir)
+			f.collect("on")
+			f.fit("all")
+
+
+if __name__ == "__main__":
+	main(sys.argv[1:])
